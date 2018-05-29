@@ -13,7 +13,7 @@ launch.py
 __author__ = "Carlos Morcillo-Suarez"
 __copyright__ = "Copyright 2018, Carlos Morcillo-Suarez"
 __license__ = "GPL"
-__version__ = "1.1"
+__version__ = "1.2"
 __email__ = "carlos.morcillo.upf.edu@gmail.com"
 
 import sys
@@ -78,6 +78,16 @@ def usage():
             -v, --version
                 Displays version
 
+            -d, --dependent-on
+                -d <job_id>:<job_id> ...
+                mnsubmit will be called as:
+                    mnsubmit -dep afterok:<job_id>:<job_id>...
+
+                The job will not begin execution until all the specified
+                job_IDs have successfuly ended
+
+
+
         Examples
 
             launch --name dog1qc -c "fastqc -i ./dog1.fastq -o ./dog1"
@@ -118,11 +128,11 @@ def processArguments(argv):
     try:
         opts, args = getopt.getopt(
                         argv,
-                        "hn:l:t:m:c:fo:v",
+                        "hn:l:t:m:c:fo:vd:",
                         ["help", "name=", "limit=",
                         "tasks=","modules=","command=",
                         "file-only","output-directory=",
-                        "version"]
+                        "version","dependent-on="]
         )
     except getopt.GetoptError as e:
         print e
@@ -157,12 +167,16 @@ def processArguments(argv):
         elif opt in ("-o", "--output-directory"):
             global outputDirectory
             outputDirectory = arg
+        elif opt in ("-d", "--dependent-on"):
+            global previousJobs
+            previousJobs = arg
 
 
 if __name__ == "__main__":
 
-    name = "job"
-    commandToExecute = ""
+    name = 'job'
+    previousJobs = ''
+    commandToExecute = ''
     limit = "01:00:00"
     total_tasks = '1'
     cpus_per_task = '1'
@@ -216,4 +230,7 @@ if __name__ == "__main__":
 
     # Executes Command File
     if executeFile:
-        os.system("mnsubmit "+commandFileName)
+        if previousJobs == '':
+            os.system("mnsubmit "+commandFileName)
+        else:
+            os.system("mnsubmit -dep afterok:"+previousJobs+' '+commandFileName)

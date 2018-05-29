@@ -83,6 +83,45 @@ compare_strings \
 	"${REFERENCE_STRING}"
 
 
+# Test ----------------------------------------
+initialize_test 'launches a job'
+
+OLD_PATH=${PATH}
+PATH=.:${OLD_PATH}
+STRING=$(\
+    ./launch \
+      --name simpleJob \
+      --output-directory ./test/outputs \
+      -c "fastqc -i ./dog1.fastq -o ./dog1"
+    )
+PATH=${OLD_PATH}
+REFERENCE_STRING=./test/outputs/simpleJob.cmd
+
+compare_strings \
+	"${STRING}" \
+	"${REFERENCE_STRING}"
+
+
+# Test ----------------------------------------
+initialize_test 'launches a job dependent on another'
+
+OLD_PATH=${PATH}
+PATH=.:${OLD_PATH}
+STRING=$(\
+    ./launch \
+      --name dependentJob \
+      --dependent-on 666845:333444 \
+      --output-directory ./test/outputs \
+      -c "fastqc -i ./dog1.fastq -o ./dog1"
+    )
+PATH=${OLD_PATH}
+REFERENCE_STRING="-dep afterok:666845:333444 ./test/outputs/dependentJob.cmd"
+
+compare_strings \
+	"${STRING}" \
+	"${REFERENCE_STRING}"
+
+
 ############################################################
 }
 
@@ -190,7 +229,7 @@ if true; then
 	else
 
 	  if [ ! -d "test/scripts" ]; then
-		mkdir test/scrips
+		mkdir test/scripts
 	  fi
 
 	  if [ ! -d "test/inputs" ]; then
