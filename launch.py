@@ -13,7 +13,7 @@ launch.py
 __author__ = "Carlos Morcillo-Suarez"
 __copyright__ = "Copyright 2018, Carlos Morcillo-Suarez"
 __license__ = "GPL"
-__version__ = "1.0"
+__version__ = "1.1"
 __email__ = "carlos.morcillo.upf.edu@gmail.com"
 
 import sys
@@ -22,17 +22,6 @@ import os
 import getopt
 import unittest
 
-# Global variables ---------------
-name = "job"
-commandToExecute = ""
-limit = "01:00:00"
-total_tasks = '1'
-cpus_per_task = '1'
-modules = []
-executeFile = True
-outputDirectory = '.'
-
-# Functions ----------------------
 
 def usage():
     print """
@@ -86,6 +75,9 @@ def usage():
                 directory where the *.cmd file is created
                 Default = '.'
 
+            -v, --version
+                Displays version
+
         Examples
 
             launch --name dog1qc -c "fastqc -i ./dog1.fastq -o ./dog1"
@@ -126,10 +118,11 @@ def processArguments(argv):
     try:
         opts, args = getopt.getopt(
                         argv,
-                        "hn:l:t:m:c:fo:",
+                        "hn:l:t:m:c:fo:v",
                         ["help", "name=", "limit=",
                         "tasks=","modules=","command=",
-                        "file-only","output-directory="]
+                        "file-only","output-directory=",
+                        "version"]
         )
     except getopt.GetoptError as e:
         print e
@@ -138,6 +131,9 @@ def processArguments(argv):
     for opt, arg in opts:
         if opt in ("-h", "--help"):
             usage()
+            sys.exit()
+        if opt in ("-v", "--version"):
+            print('launch Version: '+__version__)
             sys.exit()
         elif opt in ("-n", "--name"):
             global name
@@ -163,8 +159,16 @@ def processArguments(argv):
             outputDirectory = arg
 
 
-# Main code -----------------------------
 if __name__ == "__main__":
+
+    name = "job"
+    commandToExecute = ""
+    limit = "01:00:00"
+    total_tasks = '1'
+    cpus_per_task = '1'
+    modules = []
+    executeFile = True
+    outputDirectory = '.'
 
     # Process command line
     processArguments(sys.argv[1:])
@@ -213,7 +217,3 @@ if __name__ == "__main__":
     # Executes Command File
     if executeFile:
         os.system("mnsubmit "+commandFileName)
-
-
-
-# Tests ------------------------------------------------------
