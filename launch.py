@@ -21,6 +21,7 @@ import os
 
 import getopt
 import unittest
+import re
 
 
 def usage():
@@ -194,10 +195,12 @@ if __name__ == "__main__":
         usage()
         sys.exit(2)
 
-
     # Creates Command File
     commandFileName = os.path.join(outputDirectory,name+".cmd")
     jobName = name
+
+    # Simplifies blank spaces in commandToExecute
+    commandToExecute = re.sub(' +',' ',commandToExecute)
 
     try:
         with open(commandFileName,"w") as commandFile:

@@ -15,8 +15,8 @@ initialize_test 'Works with basic configuration'
     -c "fastqc -i ./dog1.fastq -o ./dog1" \
 
 compare_files \
-	./test/outputs/zdog1qc.cmd \
-	./test/inputs/references/test1.cmd
+  ./test/outputs/zdog1qc.cmd \
+  ./test/inputs/references/test1.cmd
 
 
 # Test ----------------------------------------
@@ -31,8 +31,8 @@ initialize_test 'Includes Time Limit and Modules'
   -c "gzip -d bigfile.fastq"
 
 compare_files \
-	./test/outputs/unzip003.cmd \
-	./test/inputs/references/test2.cmd
+  ./test/outputs/unzip003.cmd \
+  ./test/inputs/references/test2.cmd
 
 
 # Test ----------------------------------------
@@ -46,8 +46,8 @@ initialize_test 'Includes Tasks and CPUs per Task'
   -c "ls -ald *"
 
 compare_files \
-	./test/outputs/tasks_and_cpus.cmd \
-	./test/inputs/references/test3.cmd
+  ./test/outputs/tasks_and_cpus.cmd \
+  ./test/inputs/references/test3.cmd
 
 
 # Test ----------------------------------------
@@ -61,8 +61,8 @@ initialize_test 'Assigns long jobs to Low Priority Queue'
   -c "ls -ald *"
 
 compare_files \
-	./test/outputs/low_priority_queue.cmd \
-	./test/inputs/references/test4.cmd
+  ./test/outputs/low_priority_queue.cmd \
+  ./test/inputs/references/test4.cmd
 
 
 # Test ----------------------------------------
@@ -71,16 +71,16 @@ initialize_test 'Shows Version with --version/-v'
 STRING=$(./launch --version)
 STRING2=$(./launch -v)
 REFERENCE_STRING='launch Version: '$(cat launch.py |
-									grep __version__ |
-									head -1 |
-									cut -d'"' -f2)
+                  grep __version__ |
+                  head -1 |
+                  cut -d'"' -f2)
 
 compare_strings \
-	"${STRING}" \
-	"${REFERENCE_STRING}"
+  "${STRING}" \
+  "${REFERENCE_STRING}"
 compare_strings \
-	"${STRING2}" \
-	"${REFERENCE_STRING}"
+  "${STRING2}" \
+  "${REFERENCE_STRING}"
 
 
 # Test ----------------------------------------
@@ -98,8 +98,8 @@ PATH=${OLD_PATH}
 REFERENCE_STRING=./test/outputs/simpleJob.cmd
 
 compare_strings \
-	"${STRING}" \
-	"${REFERENCE_STRING}"
+  "${STRING}" \
+  "${REFERENCE_STRING}"
 
 
 # Test ----------------------------------------
@@ -118,10 +118,29 @@ PATH=${OLD_PATH}
 REFERENCE_STRING="-dep afterok:666845:333444 ./test/outputs/dependentJob.cmd"
 
 compare_strings \
-	"${STRING}" \
-	"${REFERENCE_STRING}"
+  "${STRING}" \
+  "${REFERENCE_STRING}"
 
+# Test ----------------------------------------
+initialize_test 'Simplifies blank spaces in command'
 
+COMMAND=" 
+          ls -alh *.txt
+          mv \
+          veryLongFile.txt \
+          veryVeryLongFile.txt \
+        "
+
+./launch \
+  --file-only \
+  --name simplifiedSpaces \
+  --limit 1:00:00 \
+  --output-directory ./test/outputs \
+  -c "$COMMAND"
+
+compare_files \
+  ./test/outputs/simplifiedSpaces.cmd \
+  ./test/inputs/references/test5.cmd
 ############################################################
 }
 
@@ -129,7 +148,7 @@ compare_strings \
 # Testing Functions
 
 initialize_test(){
-	echo
+  echo
   echo $1
 }
 
@@ -138,7 +157,7 @@ compare_strings(){
   STRING=$1
   REFERENCE_STRING=$2
 
-	if [ "${STRING}" = "${REFERENCE_STRING}" ]
+  if [ "${STRING}" = "${REFERENCE_STRING}" ]
   then
     echo "------------------------------------------------- OK"
   else
@@ -155,7 +174,7 @@ compare_files(){
   # Checks expected outputfile
   if [ -f "${FILE_NAME}" ]
   then
-      diff ${FILE_NAME} ${MODEL_FILE} > /dev/null
+      zdiff ${FILE_NAME} ${MODEL_FILE} > /dev/null
       if test $? -eq 0
       then
         echo "------------------------------------------------- OK"
@@ -165,7 +184,7 @@ compare_files(){
       fi
   else
       echo 'ERROR ------------------------------ ERROR'
-	    echo "Expected ${FILE_NAME} not found."
+      echo "Expected ${FILE_NAME} not found."
   fi
 }
 
@@ -178,23 +197,26 @@ compare_directories(){
   # Checks whether both directories have identical content
   TARGET_DIRECTORY_NAME_LENGTH=${#TARGET_DIRECTORY_NAME}
   targetContent=$(
-                find ${TARGET_DIRECTORY_NAME} -type f |
-                cut -c$((${TARGET_DIRECTORY_NAME_LENGTH}+2))-
-                )
+    find ${TARGET_DIRECTORY_NAME} -type f |
+    cut -c$((${TARGET_DIRECTORY_NAME_LENGTH}+2))-
+    )
 
   REFERENCE_DIRECTORY_NAME_LENGTH=${#REFERENCE_DIRECTORY_NAME}
   referenceContent=$(
-                find ${REFERENCE_DIRECTORY_NAME} -type f |
-                cut -c$((${REFERENCE_DIRECTORY_NAME_LENGTH}+2))-
-                )
+    find ${REFERENCE_DIRECTORY_NAME} -type f |
+    cut -c$((${REFERENCE_DIRECTORY_NAME_LENGTH}+2))-
+    )
 
   STATUS='OK'
-  for file in $(echo "${targetContent} ${referenceContent}" \
-                      | tr ' ' '\n' \
-                      | sort -u)
+  for file in $(\
+    echo "${targetContent} ${referenceContent}" \
+    | tr ' ' '\n' \
+    | sort -u
+    )
   do
-  	ZDIFF_OUTPUT=$(zdiff ${TARGET_DIRECTORY_NAME}/${file} \
-                        ${REFERENCE_DIRECTORY_NAME}/${file})
+    ZDIFF_OUTPUT=$(\
+      zdiff ${TARGET_DIRECTORY_NAME}/${file} \
+      ${REFERENCE_DIRECTORY_NAME}/${file})
     if test $? -ne 0
     then
       STATUS='NOK'
@@ -203,7 +225,7 @@ compare_directories(){
     #else
       #echo -e '\t'${TARGET_DIRECTORY_NAME}/${file}
       #echo -e '\t'"OK"
-  	fi
+    fi
   done
 
   if test $STATUS = 'OK'
@@ -218,39 +240,39 @@ compare_directories(){
 
 # Creates and cleans test directory structure
 if true; then
-	if [ ! -d "test" ]; then
+  if [ ! -d "test" ]; then
 
-	  mkdir test
-	  mkdir test/scripts
-	  mkdir test/inputs
-	  mkdir test/tmp
-	  mkdir test/outputs
+    mkdir test
+    mkdir test/scripts
+    mkdir test/inputs
+    mkdir test/tmp
+    mkdir test/outputs
 
-	else
+  else
 
-	  if [ ! -d "test/scripts" ]; then
-		mkdir test/scripts
-	  fi
+    if [ ! -d "test/scripts" ]; then
+    mkdir test/scripts
+    fi
 
-	  if [ ! -d "test/inputs" ]; then
-		mkdir test/inputs
-	  fi
+    if [ ! -d "test/inputs" ]; then
+    mkdir test/inputs
+    fi
 
-	  if [ ! -d "test/tmp" ]; then
-		mkdir test/tmp
-	  else
-		rm -fR test/tmp/*
-	  fi
+    if [ ! -d "test/tmp" ]; then
+    mkdir test/tmp
+    else
+    rm -fR test/tmp/*
+    fi
 
-	  if [ ! -d "test/outputs" ]; then
-		mkdir test/outputs
-	  else
-		rm -fR test/outputs/*
-	  fi
+    if [ ! -d "test/outputs" ]; then
+    mkdir test/outputs
+    else
+    rm -fR test/outputs/*
+    fi
 
-	fi
+  fi
 else
-	echo "WARNING -- TESTING MODE"
+  echo "WARNING -- TESTING MODE"
 fi
 
 run_tests
