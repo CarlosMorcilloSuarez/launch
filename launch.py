@@ -73,7 +73,8 @@ def usage():
                 only creates the file and does not execute it after creation
 
             -o, --output-directory
-                directory where the *.cmd file is created
+                directory where the command, output and stderr files are
+                created.
                 Default = '.'
 
             -v, --version
@@ -209,8 +210,8 @@ if __name__ == "__main__":
             # Cluster parameters
             commandFile.write("# @ job_name = "+jobName+"\n")
             commandFile.write("# @ initialdir = .\n")
-            commandFile.write("# @ output = "+jobName+"_%j.out\n")
-            commandFile.write("# @ error = "+jobName+"_%j.err\n")
+            commandFile.write("# @ output = "+outputDirectory+"/"+jobName+"_%j.out\n")
+            commandFile.write("# @ error = "+outputDirectory+"/"+jobName+"_%j.err\n")
             commandFile.write("# @ total_tasks = "+total_tasks+"\n")
             commandFile.write("# @ cpus_per_task = "+cpus_per_task+"\n")
             commandFile.write("# @ wall_clock_limit = "+limit+"\n")
