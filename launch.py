@@ -11,9 +11,8 @@ launch.py
 '''
 
 __author__ = "Carlos Morcillo-Suarez"
-__copyright__ = "Copyright 2018, Carlos Morcillo-Suarez"
 __license__ = "GPL"
-__version__ = "1.2"
+__version__ = "1.3"
 __email__ = "carlos.morcillo.upf.edu@gmail.com"
 
 import sys
