@@ -18,6 +18,7 @@ __email__ = "carlos.morcillo.upf.edu@gmail.com"
 import sys
 import os
 
+import subprocess
 import getopt
 import unittest
 import re
@@ -234,6 +235,10 @@ if __name__ == "__main__":
     # Executes Command File
     if executeFile:
         if previousJobs == '':
-            os.system("mnsubmit "+commandFileName)
+            command = "mnsubmit "+commandFileName
+            result = subprocess.check_output(command, shell=True)
+            
         else:
-            os.system("mnsubmit -dep afterok:"+previousJobs+' '+commandFileName)
+            command = "mnsubmit -dep afterok:"+previousJobs+' '+commandFileName
+            result = subprocess.check_output(command, shell=True)
+        print result.split()[3]+" "+result

@@ -90,12 +90,13 @@ OLD_PATH=${PATH}
 PATH=.:${OLD_PATH}
 STRING=$(\
     ./launch \
-      --name simpleJob \
+      --name launchesJob \
       --output-directory ./test/outputs \
-      -c "fastqc -i ./dog1.fastq -o ./dog1"
+      -c "ls -ald *" \
+    | tail -n +2
     )
 PATH=${OLD_PATH}
-REFERENCE_STRING=./test/outputs/simpleJob.cmd
+REFERENCE_STRING="./test/outputs/launchesJob.cmd"
 
 compare_strings \
   "${STRING}" \
@@ -112,7 +113,8 @@ STRING=$(\
       --name dependentJob \
       --dependent-on 666845:333444 \
       --output-directory ./test/outputs \
-      -c "fastqc -i ./dog1.fastq -o ./dog1"
+      -c "gzip -d bigfile.fastq" \
+    | tail -n +2
     )
 PATH=${OLD_PATH}
 REFERENCE_STRING="-dep afterok:666845:333444 ./test/outputs/dependentJob.cmd"
@@ -140,7 +142,25 @@ COMMAND="
 
 compare_files \
   ./test/outputs/simplifiedSpaces.cmd \
-  ./test/inputs/references/test5.cmd
+  ./test/inputs/references/test5.cmd    
+  
+# Test ----------------------------------------
+initialize_test 'Returns id after launching job'
+
+OLD_PATH=${PATH}
+PATH=.:${OLD_PATH}
+STRING=$(./launch \
+          --name returnsID \
+          --output-directory ./test/outputs \
+          -c "gzip -d bigfile.fastq" \
+        | head -1)
+
+PATH=${OLD_PATH}
+REFERENCE_STRING="15565827 Submitted batch job 15565827"
+
+compare_strings \
+  "${STRING}" \
+  "${REFERENCE_STRING}"
 ############################################################
 }
 
