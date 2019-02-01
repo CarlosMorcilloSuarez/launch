@@ -6,8 +6,10 @@ run_tests(){
 # Tests are written here ###################################
 
 # Test ----------------------------------------
-initialize_test 'Works with basic configuration'
+initialize_test 'CNAG: Works with basic configuration'
 
+cp ./test/inputs/launchConfig_CNAG.py ./launchConfig.py
+rm ./launchConfig.pyc
 ./launch \
     --file-only \
     --name zdog1qc \
@@ -20,8 +22,10 @@ compare_files \
 
 
 # Test ----------------------------------------
-initialize_test 'Includes Time Limit and Modules'
+initialize_test 'CNAG: Includes Time Limit and Modules'
 
+cp ./test/inputs/launchConfig_CNAG.py ./launchConfig.py
+rm ./launchConfig.pyc
 ./launch \
   --file-only \
   --name unzip003 \
@@ -36,8 +40,10 @@ compare_files \
 
 
 # Test ----------------------------------------
-initialize_test 'Includes Tasks and CPUs per Task'
+initialize_test 'CNAG: Includes Tasks and CPUs per Task'
 
+cp ./test/inputs/launchConfig_CNAG.py ./launchConfig.py
+rm ./launchConfig.pyc
 ./launch \
   --file-only \
   --name tasks_and_cpus \
@@ -51,8 +57,10 @@ compare_files \
 
 
 # Test ----------------------------------------
-initialize_test 'Assigns long jobs to Low Priority Queue'
+initialize_test 'CNAG: Assigns long jobs to Low Priority Queue'
 
+cp ./test/inputs/launchConfig_CNAG.py ./launchConfig.py
+rm ./launchConfig.pyc
 ./launch \
   --file-only \
   --name low_priority_queue \
@@ -66,8 +74,10 @@ compare_files \
 
 
 # Test ----------------------------------------
-initialize_test 'Shows Version with --version/-v'
+initialize_test 'CNAG: Shows Version with --version/-v'
 
+cp ./test/inputs/launchConfig_CNAG.py ./launchConfig.py
+rm ./launchConfig.pyc
 STRING=$(./launch --version)
 STRING2=$(./launch -v)
 REFERENCE_STRING='launch Version: '$(cat launch.py |
@@ -84,8 +94,10 @@ compare_strings \
 
 
 # Test ----------------------------------------
-initialize_test 'launches a job'
+initialize_test 'CNAG: launches a job'
 
+cp ./test/inputs/launchConfig_CNAG.py ./launchConfig.py
+rm ./launchConfig.pyc
 OLD_PATH=${PATH}
 PATH=.:${OLD_PATH}
 STRING=$(\
@@ -96,7 +108,7 @@ STRING=$(\
     | tail -n +2
     )
 PATH=${OLD_PATH}
-REFERENCE_STRING="./test/outputs/launchesJob.cmd"
+REFERENCE_STRING="mnsubmit ./test/outputs/launchesJob.cmd"
 
 compare_strings \
   "${STRING}" \
@@ -104,8 +116,10 @@ compare_strings \
 
 
 # Test ----------------------------------------
-initialize_test 'launches a job dependent on another'
+initialize_test 'CNAG: launches a job dependent on another'
 
+cp ./test/inputs/launchConfig_CNAG.py ./launchConfig.py
+rm ./launchConfig.pyc
 OLD_PATH=${PATH}
 PATH=.:${OLD_PATH}
 STRING=$(\
@@ -117,7 +131,7 @@ STRING=$(\
     | tail -n +2
     )
 PATH=${OLD_PATH}
-REFERENCE_STRING="-dep afterok:666845:333444 ./test/outputs/dependentJob.cmd"
+REFERENCE_STRING="mnsubmit -dep afterok:666845:333444 ./test/outputs/dependentJob.cmd"
 
 compare_strings \
   "${STRING}" \
@@ -126,6 +140,8 @@ compare_strings \
 # Test ----------------------------------------
 initialize_test 'Simplifies blank spaces in command'
 
+cp ./test/inputs/launchConfig_CNAG.py ./launchConfig.py
+rm ./launchConfig.pyc
 COMMAND=" 
           ls -alh *.txt
           mv \
@@ -145,8 +161,10 @@ compare_files \
   ./test/inputs/references/test5.cmd    
   
 # Test ----------------------------------------
-initialize_test 'Returns id after launching job'
+initialize_test 'CNAG: Returns id after launching job'
 
+cp ./test/inputs/launchConfig_CNAG.py ./launchConfig.py
+rm ./launchConfig.pyc
 OLD_PATH=${PATH}
 PATH=.:${OLD_PATH}
 STRING=$(./launch \
@@ -161,6 +179,141 @@ REFERENCE_STRING="15565827 Submitted batch job 15565827"
 compare_strings \
   "${STRING}" \
   "${REFERENCE_STRING}"
+  
+# Test ----------------------------------------
+initialize_test 'UPF: Works with basic configuration'
+
+cp ./test/inputs/launchConfig_UPF.py ./launchConfig.py
+rm ./launchConfig.pyc
+./launch \
+    --file-only \
+    --name upfBasic \
+    --output-directory ./test/outputs \
+    -c "ls -al" \
+
+compare_files \
+  ./test/outputs/upfBasic.cmd \
+  ./test/inputs/references/test6.cmd
+
+  
+# Test ----------------------------------------
+initialize_test 'UPF: Includes Time Limit and Modules'
+
+cp ./test/inputs/launchConfig_UPF.py ./launchConfig.py
+rm ./launchConfig.pyc
+./launch \
+  --file-only \
+  --name timeModulesUPF \
+  --limit 05:00:00 \
+  --modules "GZIP SRA" \
+  --output-directory ./test/outputs \
+  -c "gzip -d bigfile.fastq"
+
+compare_files \
+  ./test/outputs/timeModulesUPF.cmd \
+  ./test/inputs/references/test7.cmd
+  
+# Test ----------------------------------------
+initialize_test 'UPF: Includes Tasks and CPUs per Task'
+
+cp ./test/inputs/launchConfig_UPF.py ./launchConfig.py
+rm ./launchConfig.pyc
+./launch \
+  --file-only \
+  --name UPF_tasks_cpus \
+  --tasks 2*3 \
+  --output-directory ./test/outputs \
+  -c "ls -ald *"
+
+compare_files \
+  ./test/outputs/UPF_tasks_cpus.cmd \
+  ./test/inputs/references/test8.cmd  
+  
+# Test ----------------------------------------
+initialize_test 'UPF: Shows Version with --version/-v'
+
+cp ./test/inputs/launchConfig_UPF.py ./launchConfig.py
+rm ./launchConfig.pyc
+STRING=$(./launch --version)
+STRING2=$(./launch -v)
+REFERENCE_STRING='launch Version: '$(cat launch.py |
+                  grep __version__ |
+                  head -1 |
+                  cut -d'"' -f2)
+
+compare_strings \
+  "${STRING}" \
+  "${REFERENCE_STRING}"
+compare_strings \
+  "${STRING2}" \
+  "${REFERENCE_STRING}"
+
+
+# Test ----------------------------------------
+initialize_test 'UPF: launches a job'
+
+cp ./test/inputs/launchConfig_UPF.py ./launchConfig.py
+rm ./launchConfig.pyc
+OLD_PATH=${PATH}
+PATH=.:${OLD_PATH}
+STRING=$(\
+    ./launch \
+      --name UPFlaunchesJob \
+      --output-directory ./test/outputs \
+      -c "ls -ald *" \
+    | tail -n +2
+    )
+PATH=${OLD_PATH}
+REFERENCE_STRING="sbatch ./test/outputs/UPFlaunchesJob.cmd"
+
+compare_strings \
+  "${STRING}" \
+  "${REFERENCE_STRING}"
+  
+  
+# Test ----------------------------------------
+initialize_test 'UPF: launches a job dependent on another'
+
+cp ./test/inputs/launchConfig_UPF.py ./launchConfig.py
+rm ./launchConfig.pyc
+OLD_PATH=${PATH}
+PATH=.:${OLD_PATH}
+STRING=$(\
+    ./launch \
+      --name UPFdependentJob \
+      --dependent-on 666845:333444 \
+      --output-directory ./test/outputs \
+      -c "gzip -d bigfile.fastq" \
+    | tail -n +2
+    )
+PATH=${OLD_PATH}
+REFERENCE_STRING="sbatch --dependency afterok:666845:333444 ./test/outputs/UPFdependentJob.cmd"
+
+compare_strings \
+  "${STRING}" \
+  "${REFERENCE_STRING}"
+
+
+# Test ----------------------------------------
+initialize_test 'UPF: Returns id after launching job'
+
+cp ./test/inputs/launchConfig_UPF.py ./launchConfig.py
+rm ./launchConfig.pyc
+OLD_PATH=${PATH}
+PATH=.:${OLD_PATH}
+STRING=$(./launch \
+          --name UPFreturnsID \
+          --output-directory ./test/outputs \
+          -c "gzip -d bigfile.fastq" \
+        | head -1)
+
+PATH=${OLD_PATH}
+REFERENCE_STRING="15565827 Submitted batch job 15565827"
+
+compare_strings \
+  "${STRING}" \
+  "${REFERENCE_STRING}"
+  
 ############################################################
 }
 

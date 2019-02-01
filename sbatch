@@ -1,4 +1,4 @@
 #!/bin/bash
 
 echo "Submitted batch job 15565827"
-echo mnsubmit "$@"
+echo sbatch "$@"

@@ -4,7 +4,7 @@
 '''
 launch.py
 
-    Wrapper to submit jobs to the CNAG cluster.
+    Wrapper to submit jobs to the CNAG and UPF clusters.
     First it creates a Command File according to the especifications received
         from command line arguments.
     Then submits that command file to the cluster to be executed.
@@ -23,15 +23,19 @@ import getopt
 import unittest
 import re
 
+import launchConfig
 
 def usage():
     print """
     launch
 
-        Creates a command file with the approapriate format to be
-        launched as a job in CNAG cluster and submits the file as a
-        job using
-            $ mnsubmit command.
+        Is a wrapper to submit jobs to the CNAG and UPF clusters.
+        First it creates a Command File according to the especifications received
+            from command line arguments.
+        Then submits that command file to the cluster to be executed.
+        
+        The cluster (CNAG or UPF) where launch is running must be specified 
+            in the launchconfig.py file.
 
         Use
             launch [options] -c command_to_execute
@@ -53,7 +57,8 @@ def usage():
                 wall-clock-limit. Maximum amount of time that the
                 job will be allowd to run on the cluster.
                 --limit hh:mm:ss
-                Default = 01:00:00
+                Default = 01:00:00 (CNAG)
+                          No limit (UPF)
 
             -t, --tasks
                 total_tasks*cpus_per_task
@@ -91,7 +96,7 @@ def usage():
 
 
         Examples
-
+            (CNAG cluster)
             launch --name dog1qc -c "fastqc -i ./dog1.fastq -o ./dog1"
                 generates a file "doglqc.cmd" with content:
 
@@ -123,10 +128,40 @@ def usage():
 
                     gzip -d bigfile.fastq
 
+
+            (UPF cluster)
+            ./launch --file-only --name UPF_tasks_cpus --tasks 2*3 --output-directory ./test/outputs -c "ls -ald *"
+                generates a file "UPF_tasks_cpus.cmd" with content
+                
+                    #!/bin/bash
+                    #SBATCH --job-name=UPF_tasks_cpus
+                    #SBATCH --output=./test/outputs/UPF_tasks_cpus_%j.out
+                    #SBATCH --error=./test/outputs/UPF_tasks_cpus_%j.err
+                    #SBATCH --ntasks=2
+                    #SBATCH --cpus-per-task=3
+
+                    ls -ald *
         """
+        
+        
+class JobDefinition():    
+    def __init__(self):
+        self.clusterName = launchConfig.clusterName
+        self.name = 'job'
+        self.previousJobs = ''
+        self.commandToExecute = ''
+        if launchConfig.clusterName=="CNAG":
+            self.limit = "01:00:00"
+        elif launchConfig.clusterName=="UPF":
+            self.limit = None
+        self.total_tasks = '1'
+        self.cpus_per_task = '1'
+        self.modules = []
+        self.executeFile = True
+        self.outputDirectory = '.'
 
 
-def processArguments(argv):
+def processArguments(jobDefinition,argv):
     try:
         opts, args = getopt.getopt(
                         argv,
@@ -148,97 +183,109 @@ def processArguments(argv):
             print('launch Version: '+__version__)
             sys.exit()
         elif opt in ("-n", "--name"):
-            global name
-            name = arg
+            jobDefinition.name = arg
         elif opt in ("-l", "--limit"):
-            global limit
-            limit = arg
+            jobDefinition.limit = arg
         elif opt in ("-t", "--tasks"):
-            global total_tasks
-            global cpus_per_task
-            total_tasks , cpus_per_task = arg.split('*')
+            jobDefinition.total_tasks , jobDefinition.cpus_per_task = arg.split('*')
         elif opt in ("-m", "--modules"):
-            global modules
-            modules = arg.split()
+            jobDefinition.modules = arg.split()
         elif opt in ("-c", "--command"):
-            global commandToExecute
-            commandToExecute = arg
+            jobDefinition.commandToExecute = arg
         elif opt in ("-f", "--file-only"):
-            global executeFile
-            executeFile = False
+            jobDefinition.executeFile = False
         elif opt in ("-o", "--output-directory"):
-            global outputDirectory
-            outputDirectory = arg
+            jobDefinition.outputDirectory = arg
         elif opt in ("-d", "--dependent-on"):
-            global previousJobs
-            previousJobs = arg
+            jobDefinition.previousJobs = arg
+
+def writeCommandFile(jobDefinition, clusterName):
+    commandFileName = os.path.join(jobDefinition.outputDirectory,jobDefinition.name+".cmd")
+    jobName = jobDefinition.name
+
+    # Simplifies blank spaces in commandToExecute
+    jobDefinition.commandToExecute = re.sub(' +',' ',jobDefinition.commandToExecute)
+
+    try:
+        with open(commandFileName,"w") as commandFile:
+            commandFile.write("#!/bin/bash\n")
+
+            if clusterName=="CNAG":
+                # Cluster parameters
+                commandFile.write("# @ job_name = "+jobName+"\n")
+                commandFile.write("# @ initialdir = .\n")
+                commandFile.write("# @ output = "+jobDefinition.outputDirectory+"/"+jobName+"_%j.out\n")
+                commandFile.write("# @ error = "+jobDefinition.outputDirectory+"/"+jobName+"_%j.err\n")
+                commandFile.write("# @ total_tasks = "+jobDefinition.total_tasks+"\n")
+                commandFile.write("# @ cpus_per_task = "+jobDefinition.cpus_per_task+"\n")
+                commandFile.write("# @ wall_clock_limit = "+jobDefinition.limit+"\n")
+                # Assigns the job to low priority queue if execution time
+                # Is greater than 24 hours.
+                if 24 <= int(jobDefinition.limit.split(':')[0]):
+                     commandFile.write("# @ class = lowprio\n")
+                commandFile.write("\n")
+
+            if clusterName=="UPF":
+                # Cluster parameters
+                commandFile.write("#SBATCH --job-name="+jobName+"\n")
+                commandFile.write("#SBATCH --output="+jobDefinition.outputDirectory+"/"+jobName+"_%j.out\n")
+                commandFile.write("#SBATCH --error="+jobDefinition.outputDirectory+"/"+jobName+"_%j.err\n")
+                commandFile.write("#SBATCH --ntasks="+jobDefinition.total_tasks+"\n")
+                commandFile.write("#SBATCH --cpus-per-task="+jobDefinition.cpus_per_task+"\n")
+                if jobDefinition.limit:
+                    commandFile.write("#SBATCH --time="+jobDefinition.limit+"\n")
 
 
+
+            # Modules
+            for module in jobDefinition.modules:
+                commandFile.write("module load "+module+"\n")
+
+            # Command
+            commandFile.write("\n")
+            commandFile.write(jobDefinition.commandToExecute+"\n")
+                        
+    except Exception as e:
+        print e
+    
+    return commandFileName
+    
+    
 if __name__ == "__main__":
 
-    name = 'job'
-    previousJobs = ''
-    commandToExecute = ''
-    limit = "01:00:00"
-    total_tasks = '1'
-    cpus_per_task = '1'
-    modules = []
-    executeFile = True
-    outputDirectory = '.'
+    jobDefinition = JobDefinition()
 
     # Process command line
-    processArguments(sys.argv[1:])
+    processArguments(jobDefinition,sys.argv[1:])
 
     # Ends execution if commands were not especified.
-    if commandToExecute == "":
+    if jobDefinition.commandToExecute == "":
         print "No Commands to execute (--command) were especified"
         print
         usage()
         sys.exit(2)
 
     # Creates Command File
-    commandFileName = os.path.join(outputDirectory,name+".cmd")
-    jobName = name
-
-    # Simplifies blank spaces in commandToExecute
-    commandToExecute = re.sub(' +',' ',commandToExecute)
-
-    try:
-        with open(commandFileName,"w") as commandFile:
-            commandFile.write("#!/bin/bash\n")
-
-            # Cluster parameters
-            commandFile.write("# @ job_name = "+jobName+"\n")
-            commandFile.write("# @ initialdir = .\n")
-            commandFile.write("# @ output = "+outputDirectory+"/"+jobName+"_%j.out\n")
-            commandFile.write("# @ error = "+outputDirectory+"/"+jobName+"_%j.err\n")
-            commandFile.write("# @ total_tasks = "+total_tasks+"\n")
-            commandFile.write("# @ cpus_per_task = "+cpus_per_task+"\n")
-            commandFile.write("# @ wall_clock_limit = "+limit+"\n")
-            # Assigns the job to low priority queue if execution time
-            # Is greater than 24 hours.
-            if 24 <= int(limit.split(':')[0]):
-                 commandFile.write("# @ class = lowprio\n")
-            commandFile.write("\n")
-
-            # Modules
-            for module in modules:
-                commandFile.write("module load "+module+"\n")
-
-            # Command
-            commandFile.write("\n")
-            commandFile.write(commandToExecute+"\n")
-    except Exception as e:
-        print e
-
+    commandFileName = writeCommandFile(jobDefinition,launchConfig.clusterName)
 
     # Executes Command File
-    if executeFile:
-        if previousJobs == '':
-            command = "mnsubmit "+commandFileName
-            result = subprocess.check_output(command, shell=True)
+    if jobDefinition.executeFile:
+        
+        if launchConfig.clusterName=="CNAG":
+            if jobDefinition.previousJobs == '':
+                command = "mnsubmit "+commandFileName
+                result = subprocess.check_output(command, shell=True)            
+            else:
+                command = "mnsubmit -dep afterok:"+jobDefinition.previousJobs+' '+commandFileName
+                result = subprocess.check_output(command, shell=True)
+            print result.split()[3]+" "+result
             
-        else:
-            command = "mnsubmit -dep afterok:"+previousJobs+' '+commandFileName
-            result = subprocess.check_output(command, shell=True)
-        print result.split()[3]+" "+result
+        if launchConfig.clusterName=="UPF":
+           if jobDefinition.previousJobs == '':
+               command = "sbatch "+commandFileName
+               result = subprocess.check_output(command, shell=True) 
+           else:
+               command = "sbatch --dependency afterok:"+jobDefinition.previousJobs+' '+commandFileName
+               result = subprocess.check_output(command, shell=True) 
+           print result.split()[3]+" "+result
+        
