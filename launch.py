@@ -12,7 +12,7 @@ launch.py
 
 __author__ = "Carlos Morcillo-Suarez"
 __license__ = "GPL"
-__version__ = "1.5"
+__version__ = "1.6"
 __email__ = "carlos.morcillo.upf.edu@gmail.com"
 
 import sys
