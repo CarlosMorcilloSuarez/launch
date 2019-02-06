@@ -55,11 +55,14 @@ def usage():
 
             -l, --limit
                 wall-clock-limit. Maximum amount of time that the
-                job will be allowd to run on the cluster.
+                job will be allowed to run on the cluster.
                 --limit hh:mm:ss
                 Default = 01:00:00 (CNAG)
                           No limit (UPF)
 
+            -M, --memory
+                Maximum amount of memory to be used by the job in megabases.
+                
             -t, --tasks
                 total_tasks*cpus_per_task
 
@@ -159,17 +162,18 @@ class JobDefinition():
         self.modules = []
         self.executeFile = True
         self.outputDirectory = '.'
+        self.memory = 0
 
 
 def processArguments(jobDefinition,argv):
     try:
         opts, args = getopt.getopt(
                         argv,
-                        "hn:l:t:m:c:fo:vd:",
+                        "hn:l:t:m:c:fo:vd:M:",
                         ["help", "name=", "limit=",
                         "tasks=","modules=","command=",
                         "file-only","output-directory=",
-                        "version","dependent-on="]
+                        "version","dependent-on=","memory="]
         )
     except getopt.GetoptError as e:
         print e
@@ -198,6 +202,8 @@ def processArguments(jobDefinition,argv):
             jobDefinition.outputDirectory = arg
         elif opt in ("-d", "--dependent-on"):
             jobDefinition.previousJobs = arg
+        elif opt in ("-M", "--memory"):
+            jobDefinition.memory = arg
 
 def writeCommandFile(jobDefinition, clusterName):
     commandFileName = os.path.join(jobDefinition.outputDirectory,jobDefinition.name+".cmd")
@@ -219,6 +225,8 @@ def writeCommandFile(jobDefinition, clusterName):
                 commandFile.write("# @ total_tasks = "+jobDefinition.total_tasks+"\n")
                 commandFile.write("# @ cpus_per_task = "+jobDefinition.cpus_per_task+"\n")
                 commandFile.write("# @ wall_clock_limit = "+jobDefinition.limit+"\n")
+                if jobDefinition.memory:
+                    commandFile.write("# @ memory = "+jobDefinition.memory+"\n")
                 # Assigns the job to low priority queue if execution time
                 # Is greater than 24 hours.
                 if 24 <= int(jobDefinition.limit.split(':')[0]):
@@ -234,6 +242,8 @@ def writeCommandFile(jobDefinition, clusterName):
                 commandFile.write("#SBATCH --cpus-per-task="+jobDefinition.cpus_per_task+"\n")
                 if jobDefinition.limit:
                     commandFile.write("#SBATCH --time="+jobDefinition.limit+"\n")
+                if jobDefinition.memory:
+                    commandFile.write("#SBATCH --mem="+jobDefinition.memory+"\n")
 
 
 

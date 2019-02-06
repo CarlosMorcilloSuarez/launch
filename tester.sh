@@ -314,6 +314,38 @@ compare_strings \
   "${STRING}" \
   "${REFERENCE_STRING}"
   
+# Test ----------------------------------------
+initialize_test 'CNAG: Includes memory specifications'
+
+cp ./test/inputs/launchConfig_CNAG.py ./launchConfig.py
+rm ./launchConfig.pyc
+./launch \
+    --file-only \
+    --name CNAG_memory \
+    --memory 10000 \
+    --output-directory ./test/outputs \
+    -c "fastqc -i ./dog1.fastq -o ./dog1" \
+
+compare_files \
+  ./test/outputs/CNAG_memory.cmd \
+  ./test/inputs/references/test9.cmd
+  
+# Test ----------------------------------------
+initialize_test 'UPF: Includes memory specifications'
+
+cp ./test/inputs/launchConfig_UPF.py ./launchConfig.py
+rm ./launchConfig.pyc
+./launch \
+    --file-only \
+    --name UPF_memory \
+    -M 10000 \
+    --output-directory ./test/outputs \
+    -c "ls -al" \
+
+compare_files \
+  ./test/outputs/UPF_memory.cmd \
+  ./test/inputs/references/test10.cmd  
+  
 ############################################################
 }
 
