@@ -12,7 +12,7 @@ launch.py
 
 __author__ = "Carlos Morcillo-Suarez"
 __license__ = "GPL"
-__version__ = "1.6"
+__version__ = "1.71"
 __email__ = "carlos.morcillo.upf.edu@gmail.com"
 
 import sys
@@ -282,12 +282,14 @@ if __name__ == "__main__":
     if jobDefinition.executeFile:
         
         if launchConfig.clusterName=="CNAG":
-            if jobDefinition.previousJobs == '':
+            
+            # In CNAG we execute launch.py loading a python module that now has to be cleared           
+            if jobDefinition.previousJobs == '':                
                 command = "mnsubmit "+commandFileName
-                result = subprocess.check_output(command, shell=True)            
+                result = subprocess.check_output("module purge;"+command, shell=True)                
             else:
                 command = "mnsubmit -dep afterok:"+jobDefinition.previousJobs+' '+commandFileName
-                result = subprocess.check_output(command, shell=True)
+                result = subprocess.check_output("module purge;"+command, shell=True)
             print result.split()[3]+" "+result
             
         if launchConfig.clusterName=="UPF":
